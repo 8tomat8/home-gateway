@@ -2,6 +2,7 @@ version: "3.9"
 
 include:
   - path: ../ddns/docker-compose.yml
+    env_file: ../ddns/.env
 
 name: gateway
 services:
