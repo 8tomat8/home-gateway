@@ -9,6 +9,17 @@ The setup is based on [Traefik](https://traefik.io/traefik/)
 
 ## How to use
 
+### Configuration
+
+```bash
+# Theroot domain for the gateway
+DOMAIN=hulii.net
+# Read Basic http auth section for details
+HASHED_ADMIN_USER_PASS=username:password
+# Email for LetsEncrypt
+LE_EMAIL=yourletsencrypt@email.com
+```
+
 ### Shared network
 
 In order to route traffic, the gateway must be in the same docker network as the target services.
