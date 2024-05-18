@@ -1,0 +1,43 @@
+version: "3.9"
+
+include:
+  - path: ../ddns/docker-compose.yml
+
+name: gateway
+services:
+  traefik:
+    image: traefik:v2.10.4
+    container_name: gatewat_traefik
+    env_file:
+      - .env
+    command:
+      - --api.dashboard=true
+      - --providers.docker=true
+      - --accesslog=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.docker.network=mynetwork
+      - --entrypoints.web.address=:80
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.websecure.address=:443
+      - --certificatesresolvers.le.acme.email=${LE_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --certificatesresolvers.le.acme.httpChallenge.entrypoint=web
+      - --certificatesresolvers.le.acme.httpChallenge=true
+      - "--certificatesresolvers.le.acme.preferredChain=ISRG Root X1"
+    restart: unless-stopped
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik-le:/letsencrypt
+    networks:
+      - mynetwork
+
+networks:
+  mynetwork:
+    external: true
+
+volumes:
+  traefik-le:
