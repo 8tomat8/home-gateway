@@ -63,6 +63,23 @@ htpasswd -B -C 10 -c .htpasswd user1
 cat .htpasswd | sed -e s/\\$/\\$\\$/g
 ```
 
+### Example
+
+With this you can expose Treafik dashboard with basic auth on a subdomain
+
+```yaml
+labels:
+  - traefik.enable=true
+  - traefik.http.routers.traefik.rule=Host(`sub.${DOMAIN}`)
+  - traefik.http.routers.traefik.tls=true
+  - traefik.http.routers.traefik.tls.certresolver=le
+  - traefik.http.routers.traefik.service=api@internal
+  - traefik.http.services.api.loadbalancer.server.port=8080
+  - traefik.http.routers.traefik.tls.domains[0].main=sub.${DOMAIN}
+  - traefik.http.routers.traefik.middlewares=frontend
+  - traefik.http.middlewares.frontend.basicAuth.users=${HASHED_ADMIN_USER_PASS}
+```
+
 ## DDNS
 
 For DDNS I use [this](https://github.com/8tomat8/ddns)
