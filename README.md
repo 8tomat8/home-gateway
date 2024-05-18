@@ -12,8 +12,8 @@ The setup is based on [Traefik](https://traefik.io/traefik/)
 ### Configuration
 
 ```bash
-# Theroot domain for the gateway
-DOMAIN=hulii.net
+# The domain for the traefik dashboard
+DOMAIN=traefik.domain.com
 # Read Basic http auth section for details
 HASHED_ADMIN_USER_PASS=username:password
 # Email for LetsEncrypt

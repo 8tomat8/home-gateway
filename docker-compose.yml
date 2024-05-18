@@ -29,6 +29,16 @@ services:
     ports:
       - 80:80
       - 443:443
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.traefik.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.traefik.tls=true
+      - traefik.http.routers.traefik.tls.certresolver=le
+      - traefik.http.routers.traefik.service=api@internal
+      - traefik.http.services.api.loadbalancer.server.port=8080
+      - traefik.http.routers.traefik.tls.domains[0].main=${DOMAIN}
+      - traefik.http.routers.traefik.middlewares=frontend
+      - traefik.http.middlewares.frontend.basicAuth.users=${HASHED_ADMIN_USER_PASS}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-le:/letsencrypt
