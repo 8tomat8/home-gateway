@@ -45,6 +45,22 @@ services:
       - traefik-le:/letsencrypt
     networks:
       - mynetwork
+  
+  dns:
+    image: jpillora/dnsmasq:latest
+    ports:
+      - "5380:8080/tcp" #DNS web console (HTTP)
+      - "53:53/udp" #DNS service
+      - "53:53/tcp" #DNS service
+    logging:
+      options:
+        max-size: "100m"
+    volumes:
+      - ./dnsmasq.conf:/etc/dnsmasq.conf
+    restart: unless-stopped
+    sysctls:
+      - net.ipv4.ip_local_port_range=1024 65000
+
 
 networks:
   mynetwork:
