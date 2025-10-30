@@ -1,5 +1,3 @@
-version: "3.9"
-
 include:
   - path: ../ddns/docker-compose.yml
     env_file: ../ddns/.env
@@ -8,7 +6,7 @@ name: gateway
 services:
   traefik:
     image: traefik:v2.10.4
-    container_name: gatewat_traefik
+    container_name: gateway_traefik
     env_file:
       - .env
     command:
@@ -26,10 +24,12 @@ services:
       - --certificatesresolvers.le.acme.httpChallenge.entrypoint=web
       - --certificatesresolvers.le.acme.httpChallenge=true
       - "--certificatesresolvers.le.acme.preferredChain=ISRG Root X1"
+      - --entrypoints.minecraft.address=:25512
     restart: unless-stopped
     ports:
       - 80:80
       - 443:443
+      - 25512:25512
     labels:
       - traefik.enable=true
       - traefik.http.routers.traefik.rule=Host(`${DOMAIN}`)
@@ -45,22 +45,19 @@ services:
       - traefik-le:/letsencrypt
     networks:
       - mynetwork
-  
+
   dns:
-    image: jpillora/dnsmasq:latest
+    image: dockurr/dnsmasq:latest
     ports:
-      - "5380:8080/tcp" #DNS web console (HTTP)
       - "53:53/udp" #DNS service
       - "53:53/tcp" #DNS service
-    logging:
-      options:
-        max-size: "100m"
+    cap_add:
+      - NET_ADMIN
     volumes:
       - ./dnsmasq.conf:/etc/dnsmasq.conf
-    restart: unless-stopped
     sysctls:
       - net.ipv4.ip_local_port_range=1024 65000
-
+    restart: always
 
 networks:
   mynetwork:
