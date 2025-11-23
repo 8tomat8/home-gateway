@@ -1,67 +1,81 @@
 include:
-  - path: ../ddns/docker-compose.yml
-    env_file: ../ddns/.env
+    - path: ../ddns/docker-compose.yml
+      env_file: ../ddns/.env
 
 name: gateway
 services:
-  traefik:
-    image: traefik:v2.10.4
-    container_name: gateway_traefik
-    env_file:
-      - .env
-    command:
-      - --api.dashboard=true
-      - --providers.docker=true
-      - --accesslog=true
-      - --providers.docker.exposedbydefault=false
-      - --providers.docker.network=mynetwork
-      - --entrypoints.web.address=:80
-      - --entrypoints.web.http.redirections.entrypoint.to=websecure
-      - --entrypoints.web.http.redirections.entrypoint.scheme=https
-      - --entrypoints.websecure.address=:443
-      - --certificatesresolvers.le.acme.email=${LE_EMAIL}
-      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
-      - --certificatesresolvers.le.acme.httpChallenge.entrypoint=web
-      - --certificatesresolvers.le.acme.httpChallenge=true
-      - "--certificatesresolvers.le.acme.preferredChain=ISRG Root X1"
-      - --entrypoints.minecraft.address=:25512
-    restart: unless-stopped
-    ports:
-      - 80:80
-      - 443:443
-      - 25512:25512
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.traefik.rule=Host(`${DOMAIN}`)
-      - traefik.http.routers.traefik.tls=true
-      - traefik.http.routers.traefik.tls.certresolver=le
-      - traefik.http.routers.traefik.service=api@internal
-      - traefik.http.services.api.loadbalancer.server.port=8080
-      - traefik.http.routers.traefik.tls.domains[0].main=${DOMAIN}
-      - traefik.http.routers.traefik.middlewares=frontend
-      - traefik.http.middlewares.frontend.basicAuth.users=${HASHED_ADMIN_USER_PASS}
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock:ro
-      - traefik-le:/letsencrypt
-    networks:
-      - mynetwork
+    traefik:
+        image: traefik:v2.10.4
+        container_name: gateway_traefik
+        env_file:
+            - .env
+        command:
+            - --api.dashboard=true
+            - --providers.docker=true
+            - --accesslog=true
+            - --providers.docker.exposedbydefault=false
+            - --providers.docker.network=mynetwork
+            - --entrypoints.web.address=:80
+            - --entrypoints.web.http.redirections.entrypoint.to=websecure
+            - --entrypoints.web.http.redirections.entrypoint.scheme=https
+            - --entrypoints.websecure.address=:443
+            - --certificatesresolvers.le.acme.email=${LE_EMAIL}
+            - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+            - --certificatesresolvers.le.acme.httpChallenge.entrypoint=web
+            - --certificatesresolvers.le.acme.httpChallenge=true
+            - "--certificatesresolvers.le.acme.preferredChain=ISRG Root X1"
+            - --entrypoints.minecraft.address=:25512
+        restart: unless-stopped
+        ports:
+            - 80:80
+            - 443:443
+            - 25512:25512
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.traefik.rule=Host(`${DOMAIN}`)
+            - traefik.http.routers.traefik.tls=true
+            - traefik.http.routers.traefik.tls.certresolver=le
+            - traefik.http.routers.traefik.service=api@internal
+            - traefik.http.services.api.loadbalancer.server.port=8080
+            - traefik.http.routers.traefik.tls.domains[0].main=${DOMAIN}
+            - traefik.http.routers.traefik.middlewares=frontend
+            - traefik.http.middlewares.frontend.basicAuth.users=${HASHED_ADMIN_USER_PASS}
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+            - traefik-le:/letsencrypt
+        networks:
+            - mynetwork
 
-  dns:
-    image: dockurr/dnsmasq:latest
-    ports:
-      - "53:53/udp" #DNS service
-      - "53:53/tcp" #DNS service
-    cap_add:
-      - NET_ADMIN
-    volumes:
-      - ./dnsmasq.conf:/etc/dnsmasq.conf
-    sysctls:
-      - net.ipv4.ip_local_port_range=1024 65000
-    restart: always
+    dns:
+        image: dockurr/dnsmasq:latest
+        ports:
+            - "53:53/udp" #DNS service
+            - "53:53/tcp" #DNS service
+        cap_add:
+            - NET_ADMIN
+        volumes:
+            - ./dnsmasq.conf:/etc/dnsmasq.conf
+        sysctls:
+            - net.ipv4.ip_local_port_range=1024 65000
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "dig",
+                    "+time=2",
+                    "+tries=1",
+                    "@127.0.0.1",
+                    "google.com",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+            start_period: 30s
+        restart: always
 
 networks:
-  mynetwork:
-    external: true
+    mynetwork:
+        external: true
 
 volumes:
-  traefik-le:
+    traefik-le:
