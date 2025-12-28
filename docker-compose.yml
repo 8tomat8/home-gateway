@@ -73,9 +73,38 @@ services:
             start_period: 30s
         restart: always
 
+    homarr:
+        container_name: homarr
+        image: ghcr.io/homarr-labs/homarr:latest
+        restart: unless-stopped
+        networks:
+            - mynetwork
+        environment:
+            - PUID=1000
+            - PGID=121
+            - TZ=Europe/Amsterdam
+            - SECRET_ENCRYPTION_KEY=${HOMARR_SECRET_KEY}
+        volumes:
+            - homarr-config:/appdata
+            - /var/run/docker.sock:/var/run/docker.sock:ro
+        labels:
+            - traefik.enable=true
+            - traefik.http.routers.homarr.tls=true
+            - traefik.http.routers.homarr.tls.certresolver=le
+            - traefik.http.routers.homarr.tls.domains[0].main=home.${HOMARR_DOMAIN}
+            - traefik.http.routers.homarr.rule=Host(`home.${HOMARR_DOMAIN}`)
+            - traefik.http.routers.homarr.service=homarr
+            - traefik.http.services.homarr.loadbalancer.server.port=7575
+
 networks:
     mynetwork:
         external: true
 
 volumes:
     traefik-le:
+    homarr-config:
+        driver: local
+        driver_opts:
+            type: "none"
+            o: "bind"
+            device: "/home/8tomat8/home-gateway/config/homarr"
