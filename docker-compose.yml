@@ -1,6 +1,6 @@
 include:
-    - path: ../ddns/docker-compose.yml
-      env_file: ../ddns/.env
+  - path: ../ddns/docker-compose.yml
+    env_file: ../ddns/.env
 
 name: gateway
 services:
@@ -31,32 +31,25 @@ services:
       - traefik.http.routers.pocketid.tls.domains[0].main=auth.${DOMAIN}
       - traefik.http.services.pocketid.loadbalancer.server.port=1411
 
-    dns:
-        image: dockurr/dnsmasq:latest
-        ports:
-            - "53:53/udp" #DNS service
-            - "53:53/tcp" #DNS service
-        cap_add:
-            - NET_ADMIN
-        volumes:
-            - ./dnsmasq.conf:/etc/dnsmasq.conf
-        sysctls:
-            - net.ipv4.ip_local_port_range=1024 65000
-        healthcheck:
-            test:
-                [
-                    "CMD",
-                    "dig",
-                    "+time=2",
-                    "+tries=1",
-                    "@127.0.0.1",
-                    "google.com",
-                ]
-            interval: 30s
-            timeout: 10s
-            retries: 3
-            start_period: 30s
-        restart: always
+  dns:
+    image: dockurr/dnsmasq:latest
+    ports:
+      - "53:53/udp" #DNS service
+      - "53:53/tcp" #DNS service
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./dnsmasq.conf:/etc/dnsmasq.conf
+    sysctls:
+      - net.ipv4.ip_local_port_range=1024 65000
+    healthcheck:
+      test: ["CMD", "dig", "+time=2", "+tries=1", "@127.0.0.1", "google.com"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    restart: always
+
   traefik:
     image: traefik:v3
     container_name: gateway_traefik
@@ -136,6 +129,59 @@ services:
       - traefik.http.services.homarr.loadbalancer.server.port=7575
       - traefik.http.routers.homarr.middlewares=oidc-auth@file
 
+  trek:
+    image: mauriceboe/trek:latest
+    container_name: trek
+    depends_on:
+      - traefik
+    restart: unless-stopped
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - CHOWN
+      - SETUID
+      - SETGID
+    tmpfs:
+      - /tmp:noexec,nosuid,size=64m
+    networks:
+      - mynetwork
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - ENCRYPTION_KEY=${TREK_ENCRYPTION_KEY}
+      - TZ=Europe/Amsterdam
+      - FORCE_HTTPS=true
+      - TRUST_PROXY=1
+      - ALLOWED_ORIGINS=https://trippy.${DOMAIN}
+      - APP_URL=https://trippy.${DOMAIN}
+      - OIDC_ISSUER=https://auth.${DOMAIN}
+      - OIDC_CLIENT_ID=${TREK_OIDC_CLIENT_ID}
+      - OIDC_CLIENT_SECRET=${TREK_OIDC_CLIENT_SECRET}
+      - OIDC_DISPLAY_NAME=PocketID
+      - OIDC_ONLY=true
+      - OIDC_SCOPE=openid email profile groups
+      - OIDC_ADMIN_CLAIM=groups
+      - OIDC_ADMIN_VALUE=trek-admins
+    volumes:
+      - trek-data:/app/data
+      - trek-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.trek.tls=true
+      - traefik.http.routers.trek.tls.certresolver=le
+      - traefik.http.routers.trek.rule=Host(`trippy.${DOMAIN}`)
+      - traefik.http.routers.trek.tls.domains[0].main=trippy.${DOMAIN}
+      - traefik.http.services.trek.loadbalancer.server.port=3000
+
 networks:
   mynetwork:
     external: true
@@ -154,3 +200,15 @@ volumes:
       type: "none"
       o: "bind"
       device: "/home/8tomat8/home-gateway/config/pocketid"
+  trek-data:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "${TREK_DATA_PATH}/data"
+  trek-uploads:
+    driver: local
+    driver_opts:
+      type: "none"
+      o: "bind"
+      device: "${TREK_DATA_PATH}/uploads"
