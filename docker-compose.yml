@@ -90,7 +90,7 @@ services:
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - traefik-le:/letsencrypt
-      - ./config/traefik:/etc/traefik/dynamic:ro
+      - ${CONFIG_PATH}/traefik:/etc/traefik/dynamic:ro
     networks:
       - mynetwork
 
