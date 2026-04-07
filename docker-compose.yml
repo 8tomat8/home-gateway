@@ -199,7 +199,7 @@ volumes:
     driver_opts:
       type: "none"
       o: "bind"
-      device: "/home/8tomat8/home-gateway/config/pocketid"
+      device: "${POCKETID_DATA_PATH}"
   trek-data:
     driver: local
     driver_opts:
