@@ -193,22 +193,22 @@ volumes:
     driver_opts:
       type: "none"
       o: "bind"
-      device: "/home/8tomat8/home-gateway/config/homarr"
+      device: "${CONFIG_PATH}/homarr"
   pocketid-data:
     driver: local
     driver_opts:
       type: "none"
       o: "bind"
-      device: "${POCKETID_DATA_PATH}"
+      device: "${CONFIG_PATH}/pocketid"
   trek-data:
     driver: local
     driver_opts:
       type: "none"
       o: "bind"
-      device: "${TREK_DATA_PATH}/data"
+      device: "${CONFIG_PATH}/trek/data"
   trek-uploads:
     driver: local
     driver_opts:
       type: "none"
       o: "bind"
-      device: "${TREK_DATA_PATH}/uploads"
+      device: "${CONFIG_PATH}/trek/uploads"
