@@ -5,7 +5,7 @@ include:
 name: gateway
 services:
   pocketid:
-    image: ghcr.io/pocket-id/pocket-id:v1
+    image: ghcr.io/pocket-id/pocket-id:v2
     container_name: pocketid
     depends_on:
       - traefik
@@ -15,7 +15,7 @@ services:
     environment:
       - TRUST_PROXY=true
       - APP_URL=https://auth.${DOMAIN}
-      - INTERNAL_APP_URL=http://pocketid:1411
+      - ENCRYPTION_KEY=${POCKETID_SECRET_KEY}
     volumes:
       - pocketid-data:/app/data
     healthcheck:
@@ -127,7 +127,6 @@ services:
       - traefik.http.routers.homarr.rule=Host(`home.${DOMAIN}`)
       - traefik.http.routers.homarr.service=homarr
       - traefik.http.services.homarr.loadbalancer.server.port=7575
-      - traefik.http.routers.homarr.middlewares=oidc-auth@file
 
   trek:
     image: mauriceboe/trek:latest
@@ -178,8 +177,9 @@ services:
       - traefik.enable=true
       - traefik.http.routers.trek.tls=true
       - traefik.http.routers.trek.tls.certresolver=le
-      - traefik.http.routers.trek.rule=Host(`trippy.${DOMAIN}`)
       - traefik.http.routers.trek.tls.domains[0].main=trippy.${DOMAIN}
+      - traefik.http.routers.trek.rule=Host(`trippy.${DOMAIN}`)
+      - traefik.http.routers.trek.service=trek
       - traefik.http.services.trek.loadbalancer.server.port=3000
 
 networks:
